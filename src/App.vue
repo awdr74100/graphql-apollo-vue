@@ -1,101 +1,98 @@
 <template>
-  <main class="wrap">
-    <h1 class="align-center font-xl mt-60">Apollo Client Test</h1>
-    <div class="flex flex-column justify-center items-center">
-      <button class="btn mt-60" @click.prevent="changeProfileUserId(7)">
-        取得 ID 為 7 的個人資料
-      </button>
-      <button class="btn mt-60" @click.prevent="changeProfileUserId(8)">
-        取得 ID 為 8 的個人資料
-      </button>
+  <h1 class="text-center mt-5 text-primary">Apollo GraphQL Client</h1>
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col">
+        <h4>取得所有帖子</h4>
+      </div>
+      <div class="col">
+        <h4>取得個人資料</h4>
+        <button class="btn btn-primary btn-sm" @click.prevent="updateUserId">
+          變更用戶
+        </button>
+      </div>
     </div>
-
-    <span v-if="$apollo.queries.posts.loading">Spinner...</span>
-    <span v-else>
-      <ul>
-        <li v-for="(post, index) in posts" :key="index">
-          <pre>{{
-            JSON.stringify(
-              {
-                id: post.id,
-                title: post.title,
-                content: post.content,
-                createdAt: new Date(+post.createdAt).toLocaleString(),
-                author: post.user.name,
-              },
-              null,
-              4,
-            )
-          }}</pre>
-        </li>
-      </ul>
-    </span>
-  </main>
+    <div class="row mt-5">
+      <div class="col">
+        <div class="spinner-border" role="status" v-if="getPostLoading"></div>
+        <span class="text-danger" v-else-if="getPostError">{{
+          getPostError
+        }}</span>
+        <pre v-else-if="getPostResult && getPostResult.posts"
+          >{{ getPostResult }}
+        </pre>
+      </div>
+      <div class="col">
+        <div
+          class="spinner-border"
+          role="status"
+          v-if="getProfileLoading"
+        ></div>
+        <span class="text-danger" v-else-if="getProfileError">{{
+          getProfileError
+        }}</span>
+        <pre v-else-if="getProfileResult && getProfileResult.profile"
+          >{{ getProfileResult }}
+        </pre>
+      </div>
+    </div>
+  </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from "vue";
+import { useQuery } from "@vue/apollo-composable";
 import { gql } from "graphql-tag";
 
-export default {
-  data() {
-    return {
-      userId: 7,
-      posts: [],
-      profile: {},
-    };
-  },
+const userId = ref(7);
 
-  methods: {
-    changeProfileUserId(id) {
-      this.userId = id;
-    },
-  },
+const updateUserId = () => {
+  userId.value === 7 ? (userId.value = 8) : (userId.value = 7);
+};
 
-  apollo: {
-    posts: {
-      query: gql`
-        query {
+const {
+  result: getPostResult,
+  loading: getPostLoading,
+  error: getPostError,
+} = useQuery(gql`
+  query GetPosts {
+    posts {
+      id
+      title
+      content
+      createdAt
+      user {
+        name
+      }
+    }
+  }
+`);
+
+const {
+  result: getProfileResult,
+  loading: getProfileLoading,
+  error: getProfileError,
+} = useQuery(
+  gql`
+    query GetProfile($userId: ID!) {
+      profile(userId: $userId) {
+        bio
+        isMyProfile
+        user {
+          id
+          name
           posts {
             id
             title
             content
             createdAt
-            user {
-              name
-            }
           }
         }
-      `,
-    },
-    profile: {
-      query: gql`
-        query GetProfile($userId: ID!) {
-          profile(userId: $userId) {
-            bio
-            user {
-              id
-              name
-              posts {
-                id
-                title
-                content
-                createdAt
-              }
-            }
-          }
-        }
-      `,
-      variables() {
-        return {
-          userId: this.userId,
-        };
-      },
-    },
-  },
-};
+      }
+    }
+  `,
+  () => ({
+    userId: userId.value,
+  }),
+);
 </script>
-
-<style scoped>
-@import "@/assets/reset.css";
-@import "@/assets/base.css";
-</style>
