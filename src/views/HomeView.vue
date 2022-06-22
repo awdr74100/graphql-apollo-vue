@@ -2,17 +2,17 @@
   <h1 class="text-center mt-5 text-primary">Apollo GraphQL Client</h1>
   <div class="container mt-5">
     <div class="row">
-      <div class="col">
+      <div class="col-md-3">
         <h4>取得所有帖子</h4>
       </div>
-      <div class="col">
+      <div class="col-md-3">
         <h4>取得個人資料</h4>
         <button class="btn btn-primary btn-sm" @click.prevent="updateUserId">
           變更用戶
         </button>
       </div>
-      <div class="col">
-        <h4>更改帖子發布狀態</h4>
+      <div class="col-md-3">
+        <h4>更改發布狀態</h4>
         <button
           class="btn btn-primary btn-sm"
           @click.prevent="publishPost({ postId: 13 })"
@@ -26,9 +26,14 @@
           取消發布
         </button>
       </div>
+      <div class="col-md-3">
+        <h4>取得用戶憑證</h4>
+        <button class="btn btn-primary btn-sm">登入</button>
+        <button class="btn btn-primary btn-sm ms-3">登出</button>
+      </div>
     </div>
     <div class="row mt-5">
-      <div class="col">
+      <div class="col-md-3">
         <div class="spinner-border" role="status" v-if="getPostLoading"></div>
         <span class="text-danger" v-else-if="getPostError">{{
           getPostError
@@ -37,7 +42,7 @@
           >{{ getPostResult }}
         </pre>
       </div>
-      <div class="col">
+      <div class="col-md-3">
         <div
           class="spinner-border"
           role="status"
@@ -50,7 +55,7 @@
           >{{ getProfileResult }}
         </pre>
       </div>
-      <div class="col">
+      <div class="col-md-3">
         <div
           class="spinner-border"
           role="status"
@@ -71,6 +76,7 @@
           }}</pre
         >
       </div>
+      <div class="col-md-3"></div>
     </div>
   </div>
 </template>
@@ -157,7 +163,7 @@ const {
 
 publishPostDone((result) => {
   state.publishPostReturn = result.data;
-  refetch();
+  if (result.data.postPublish.userErrors.length === 0) refetch();
 });
 
 const {
@@ -181,6 +187,6 @@ const {
 
 UnpublishPostDone((result) => {
   state.publishPostReturn = result.data;
-  refetch();
+  if (result.data.postUnpublish.userErrors.length === 0) refetch();
 });
 </script>
