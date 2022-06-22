@@ -14,12 +14,18 @@
       <div class="col-md-3">
         <h4>更改發布狀態</h4>
         <button
+          :disabled="
+            getProfileResult?.profile?.user?.posts[0]?.published === true
+          "
           class="btn btn-primary btn-sm"
           @click.prevent="publishPost({ postId: 13 })"
         >
           發布
         </button>
         <button
+          :disabled="
+            getProfileResult?.profile?.user?.posts[0]?.published === false
+          "
           class="btn btn-primary btn-sm ms-3"
           @click.prevent="UnpublishPost({ postId: 13 })"
         >
@@ -28,8 +34,22 @@
       </div>
       <div class="col-md-3">
         <h4>取得用戶憑證</h4>
-        <button class="btn btn-primary btn-sm">登入</button>
-        <button class="btn btn-primary btn-sm ms-3">登出</button>
+        <button
+          class="btn btn-primary btn-sm"
+          @click.prevent="
+            signin({
+              credentials: {
+                email: '4a6g0068@stust.edu.tw',
+                password: 'zxcv75395100',
+              },
+            })
+          "
+        >
+          登入
+        </button>
+        <button class="btn btn-primary btn-sm ms-3" @click.prevent="logout">
+          登出
+        </button>
       </div>
     </div>
     <div class="row mt-5">
@@ -76,7 +96,15 @@
           }}</pre
         >
       </div>
-      <div class="col-md-3"></div>
+      <div class="col-md-3">
+        <div class="spinner-border" role="status" v-if="signinLoading"></div>
+        <span class="text-danger" v-else-if="signinError">{{
+          signinError
+        }}</span>
+        <pre v-else-if="state.signinReturn.signin">{{
+          state.signinReturn
+        }}</pre>
+      </div>
     </div>
   </div>
 </template>
@@ -92,7 +120,7 @@ const updateUserId = () => {
   userId.value === 7 ? (userId.value = 8) : (userId.value = 7);
 };
 
-const state = reactive({ publishPostReturn: {} });
+const state = reactive({ publishPostReturn: {}, signinReturn: {} });
 
 const {
   result: getPostResult,
@@ -189,4 +217,31 @@ UnpublishPostDone((result) => {
   state.publishPostReturn = result.data;
   if (result.data.postUnpublish.userErrors.length === 0) refetch();
 });
+
+const {
+  mutate: signin,
+  loading: signinLoading,
+  error: signinError,
+  onDone: signinDone,
+} = useMutation(gql`
+  mutation Signin($credentials: CredentialsInput!) {
+    signin(credentials: $credentials) {
+      userErrors {
+        message
+      }
+      token
+    }
+  }
+`);
+
+signinDone((result) => {
+  state.signinReturn = result.data;
+  if (state.signinReturn.signin.userErrors.length === 0) {
+    localStorage.setItem("token", state.signinReturn.signin.token);
+  }
+});
+
+const logout = () => {
+  localStorage.removeItem("token");
+};
 </script>
