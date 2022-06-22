@@ -11,6 +11,21 @@
           變更用戶
         </button>
       </div>
+      <div class="col">
+        <h4>更改帖子發布狀態</h4>
+        <button
+          class="btn btn-primary btn-sm"
+          @click.prevent="publishPost({ postId: 13 })"
+        >
+          發布
+        </button>
+        <button
+          class="btn btn-primary btn-sm ms-3"
+          @click.prevent="UnpublishPost({ postId: 13 })"
+        >
+          取消發布
+        </button>
+      </div>
     </div>
     <div class="row mt-5">
       <div class="col">
@@ -35,13 +50,34 @@
           >{{ getProfileResult }}
         </pre>
       </div>
+      <div class="col">
+        <div
+          class="spinner-border"
+          role="status"
+          v-if="publishPostLoading || UnpublishPostLoading"
+        ></div>
+        <span
+          class="text-danger"
+          v-else-if="publishPostError || UnpublishPostError"
+          >{{ publishPostError || UnpublishPostError }}</span
+        >
+        <pre
+          v-else-if="
+            state.publishPostReturn.postPublish ||
+            state.publishPostReturn.postUnpublish
+          "
+          >{{
+            state.publishPostReturn || state.publishPostReturn.postUnpublish
+          }}</pre
+        >
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useQuery } from "@vue/apollo-composable";
+import { ref, reactive } from "vue";
+import { useQuery, useMutation } from "@vue/apollo-composable";
 import { gql } from "graphql-tag";
 
 const userId = ref(7);
@@ -49,6 +85,8 @@ const userId = ref(7);
 const updateUserId = () => {
   userId.value === 7 ? (userId.value = 8) : (userId.value = 7);
 };
+
+const state = reactive({ publishPostReturn: {} });
 
 const {
   result: getPostResult,
@@ -72,6 +110,7 @@ const {
   result: getProfileResult,
   loading: getProfileLoading,
   error: getProfileError,
+  refetch,
 } = useQuery(
   gql`
     query GetProfile($userId: ID!) {
@@ -86,6 +125,7 @@ const {
             title
             content
             createdAt
+            published
           }
         }
       }
@@ -95,4 +135,52 @@ const {
     userId: userId.value,
   }),
 );
+
+const {
+  mutate: publishPost,
+  loading: publishPostLoading,
+  error: publishPostError,
+  onDone: publishPostDone,
+} = useMutation(gql`
+  mutation PublishPost($postId: ID!) {
+    postPublish(postId: $postId) {
+      userErrors {
+        message
+      }
+      post {
+        title
+        published
+      }
+    }
+  }
+`);
+
+publishPostDone((result) => {
+  state.publishPostReturn = result.data;
+  refetch();
+});
+
+const {
+  mutate: UnpublishPost,
+  loading: UnpublishPostLoading,
+  error: UnpublishPostError,
+  onDone: UnpublishPostDone,
+} = useMutation(gql`
+  mutation UnpublishPost($postId: ID!) {
+    postUnpublish(postId: $postId) {
+      userErrors {
+        message
+      }
+      post {
+        title
+        published
+      }
+    }
+  }
+`);
+
+UnpublishPostDone((result) => {
+  state.publishPostReturn = result.data;
+  refetch();
+});
 </script>
