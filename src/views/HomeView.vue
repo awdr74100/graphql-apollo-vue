@@ -4,6 +4,20 @@
     <div class="row">
       <div class="col-md-3">
         <h4>取得所有帖子</h4>
+        <button
+          class="btn btn-primary btn-sm"
+          @click.prevent="
+            createPost({
+              post: {
+                title: `Hello Title ${Date.now()}`,
+                content: `Hello Content ${Date.now()}`,
+              },
+            })
+          "
+        >
+          新增帖子
+        </button>
+        <button class="btn btn-primary btn-sm ms-3">刪除帖子</button>
       </div>
       <div class="col-md-3">
         <h4>取得個人資料</h4>
@@ -120,12 +134,17 @@ const updateUserId = () => {
   userId.value === 7 ? (userId.value = 8) : (userId.value = 7);
 };
 
-const state = reactive({ publishPostReturn: {}, signinReturn: {} });
+const state = reactive({
+  publishPostReturn: {},
+  signinReturn: {},
+  createPostReturn: {},
+});
 
 const {
   result: getPostResult,
   loading: getPostLoading,
   error: getPostError,
+  refetch: getPostRefetch,
 } = useQuery(gql`
   query GetPosts {
     posts {
@@ -244,4 +263,35 @@ signinDone((result) => {
 const logout = () => {
   localStorage.removeItem("token");
 };
+
+const {
+  mutate: createPost,
+  // loading: createPostLoading,
+  // error: createPostError,
+  onDone: createPostDone,
+} = useMutation(gql`
+  mutation CreatePost($post: PostInput!) {
+    postCreate(post: $post) {
+      userErrors {
+        message
+      }
+      post {
+        title
+        content
+        published
+        createdAt
+        user {
+          name
+        }
+      }
+    }
+  }
+`);
+
+createPostDone(({ data }) => {
+  state.createPostReturn = data;
+  if (state.createPostReturn.postCreate.userErrors.length === 0) {
+    getPostRefetch();
+  }
+});
 </script>
